@@ -1,0 +1,80 @@
+{
+  "aggregate": "__collection__",
+  "pipeline": [
+    {
+      "$match": {
+        "symbol": "btc_usdt",
+        "timestamp": {
+          "$gte": {
+            "$numberLong": "1560302945352"
+          },
+          "$lt": {
+            "$numberLong": "1560302946338"
+          }
+        }
+      }
+    },
+    {
+      "$project": {
+        "price": 1,
+        "quantity": 1,
+        "timestamp": 1,
+        "symbol": 1,
+        "ts_group": {
+          "$subtract": [
+            "$timestamp",
+            {
+              "$mod": [
+                "$timestamp",
+                {
+                  "$numberLong": "60000"
+                }
+              ]
+            }
+          ]
+        },
+        "money": {
+          "$multiply": [
+            "$price",
+            "$quantity"
+          ]
+        },
+        "period": 60
+      }
+    },
+    {
+      "$group": {
+        "_id": "$ts_group",
+        "open": {
+          "$first": "$price"
+        },
+        "high": {
+          "$max": "$price"
+        },
+        "low": {
+          "$min": "$price"
+        },
+        "close": {
+          "$last": "$price"
+        },
+        "volume": {
+          "$sum": "$quantity"
+        },
+        "turnover": {
+          "$sum": "$money"
+        },
+        "ts": {
+          "$addToSet": "$ts_group"
+        },
+        "period": {
+          "$addToSet": "$period"
+        }
+      }
+    },
+    {
+      "$sort": {
+        "ts": 1
+      }
+    }
+  ]
+}
